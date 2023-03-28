@@ -1,7 +1,12 @@
+using LabDownloadImage.Models;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
+string connStr = "AccountEndpoint=https://lopatin-cvision.documents.azure.com:443/;AccountKey=nLyeFxTAEwqzNCt3RWb3B4rmyzUjs0N5jgCpgkSdd8rRtokAgCdGS3K0DrUKzho7zsMRBQfLwtPwACDbv3YXQw==;";
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddDbContext<MyContext>(options => options.UseCosmos(connStr,"MyDB"));
 
 //string connStr = builder.Configuration.GetConnectionString(Environment.GetEnvironmentVariable("AZURE_VALUE"));
 //builder.Services.

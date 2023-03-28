@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using System.Xml;
 
 namespace LabDownloadImage.Models
@@ -15,25 +16,53 @@ namespace LabDownloadImage.Models
         public MyService()
 		{
 			blobServiceClient = new BlobServiceClient(connString);
-			CreateContainer();
+			try
+			{
+				container=blobServiceClient.CreateBlobContainer(path);
+            }
+			catch (Exception)
+			{
+				container = blobServiceClient.GetBlobContainerClient(path);
+			}
 		}
 
-        public void CreateContainer()
+		public async Task DownloadImage(string fileName)
 		{
-			//Directory.CreateDirectory(path);
-			container = new BlobContainerClient(connString, path);
+			using (MemoryStream stream = new MemoryStream())
+			{
+				await blob.DownloadToAsync(stream);
+				byte[] bytes = stream.ToArray();
+
+				await File.WriteAllBytesAsync($"wwwroot/img/{fileName}", bytes);
+			}
 		}
 
-		public async Task AddImage(string imgName)
+		public async Task<string> UploadImage(IFormFile file)
 		{
-			fileName= Path.GetFileName(imgName);
-			string filePath=Path.Combine(path, fileName);
-			//await File.WriteAllBytesAsync(filePath, imageName);
-			blob = container.GetBlobClient(fileName);
-			
-			//using FileStream fs=File.OpenRead(filePath);
-			await blob.UploadAsync(imgName);
-			//fs.Close();
+			blob=container.GetBlobClient(file.Name);
+			using(Stream stream = file.OpenReadStream())
+			{
+				await blob.UploadAsync(stream, new BlobHttpHeaders { ContentType = file.ContentType });
+			}
+			string linkName = container.GetBlobs().LastOrDefault().Name;
+			string link=Path.Combine(container.Uri.ToString(), linkName);
+			return link;
 		}
-	}
+
+        public async Task AddImage(string file)
+        {
+        	fileName= Path.GetFileName(file);
+        	blob = container.GetBlobClient(fileName);
+
+        	await blob.UploadAsync(file, true);
+        }
+
+		public async Task<string> GetLinks(string fileName)
+		{
+            container = blobServiceClient.GetBlobContainerClient(path);
+			BlobItem blobItem = container.GetBlobs().LastOrDefault();
+			var pathPic= Path.Combine(container.Uri.ToString(), blobItem.Name);
+			return pathPic;
+        }
+    }
 }

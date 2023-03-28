@@ -1,6 +1,8 @@
 ﻿using LabDownloadImage.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
+using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 
@@ -9,34 +11,61 @@ namespace LabDownloadImage.Controllers
 	public class HomeController : Controller
 	{
 		MyService myService=new MyService();
-		private readonly ILogger<HomeController> _logger;
+		MyContext db;
+		static string endPoint = "https://lopatincompvision.cognitiveservices.azure.com/";
+        static string key = "18145f58fb0d44e5a01e60da9cadbdf5";
 
-		public HomeController(ILogger<HomeController> logger)
+		ComputerVisionClient cVisionClient = new ComputerVisionClient(new ApiKeyServiceClientCredentials(key))
 		{
-			_logger = logger;
+			Endpoint = endPoint
+		};
+
+
+		public HomeController(MyContext context)
+		{
+			db = context;
 		}
-		public IActionResult Index()
+		public async Task<IActionResult> Index()
 		{
-			return View();
+			//ViewBag.Images = await myService.DownloadImage();
+            return View();
 		}
 		[HttpPost]
-		public async Task<IActionResult> Add(string fileName)
+		public async Task<IActionResult> Add(IFormFile fileName)
 		{
-			var items = Request.Form.Files;
-			if (items.Count>0)
-			{
-				string folderPath=$@"{Directory.GetCurrentDirectory()}\wwwroot\temp";
-				//string folderPath = Server.MapPath("~/temp");
-				Directory.CreateDirectory(folderPath);
-				string filePath=Path.Combine(folderPath, items[0].Name);
+			string folderPath=$@"{Directory.GetCurrentDirectory()}\wwwroot\temp";
+			Directory.CreateDirectory(folderPath);
+			string filePath=Path.Combine(folderPath, fileName.FileName);
 
-				using (FileStream fs = new FileStream(filePath, FileMode.OpenOrCreate))
+			using (FileStream fs = new FileStream(filePath, FileMode.OpenOrCreate))
+			{
+				fileName.CopyTo(fs);
+			}
+
+            await myService.AddImage(filePath);
+			string imageLink= await myService.UploadImage(fileName);
+			ViewBag.Link=imageLink;
+
+            /////////////////////////////////////////////////////
+            List<VisualFeatureTypes?> featureTypes = Enum.GetValues(typeof(VisualFeatureTypes)).OfType<VisualFeatureTypes?>().ToList();
+
+			ImageAnalysis analysis = await cVisionClient.AnalyzeImageAsync(imageLink, featureTypes);
+
+			string imgTitle = "";
+			foreach (var item in analysis.Categories) 
+			{ 
+				imgTitle += item.Name;
+				foreach (var subitem in analysis.Brands)
 				{
-					items[0].CopyTo(fs);
+					imgTitle += subitem.Name;
 				}
-				await myService.AddImage(filePath);
-            }
-            return RedirectToAction("Index");
+			}
+			
+			db.Add(new Image() { Title =imgTitle, Path = imageLink });
+			db.SaveChanges();
+			
+
+			return View();
         }
 
         public IActionResult Privacy()
