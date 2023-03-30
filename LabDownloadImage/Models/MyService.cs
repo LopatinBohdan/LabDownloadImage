@@ -44,9 +44,11 @@ namespace LabDownloadImage.Models
 			{
 				await blob.UploadAsync(stream, new BlobHttpHeaders { ContentType = file.ContentType });
 			}
-			string linkName = container.GetBlobs().LastOrDefault().Name;
-			string link=Path.Combine(container.Uri.ToString(), linkName);
-			return link;
+			//string linkName = container.GetBlobs().LastOrDefault().Name;
+			string linkName = container.GetBlobs().Where(o => o.Name.Equals(file.FileName)).FirstOrDefault().Name;
+
+            string link=Path.Combine(container.Uri + "/" , linkName);
+            return link;
 		}
 
         public async Task AddImage(string file)

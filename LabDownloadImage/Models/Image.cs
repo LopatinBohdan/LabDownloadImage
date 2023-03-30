@@ -1,8 +1,10 @@
 ﻿namespace LabDownloadImage.Models
 {
+    
     public class Image
     {
-        public int Id { get; set; }
+       // [Newtonsoft.Json.JsonProperty(PropertyName = "id")]
+        public string? Id { get; set; }
         public string? Title { get; set; }
         public string? Path { get; set; }
     }

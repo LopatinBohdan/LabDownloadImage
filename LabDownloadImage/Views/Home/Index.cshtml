@@ -8,9 +8,18 @@
     <form method="POST" asp-action="Add" enctype="multipart/form-data">
         <input type="file" name="fileName" asp-for="fileName" />
         <input type="submit" value="Download to cloud storage">
+    </form><br /><br />
+
+    <form method="POST" class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+        <div class="input-group">
+            <input name="searchString" type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
+                   aria-label="Search" aria-describedby="basic-addon2">
+            <div class="input-group-append">
+                <button class="btn btn-primary" asp-action="ImageSearch" asp-controller="Home">
+                    <i class="fas fa-search fa-sm">Search</i>
+                </button>
+            </div>
+        </div>
     </form>
-
-
-
-
 </div>
+
